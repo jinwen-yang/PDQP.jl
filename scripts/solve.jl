@@ -148,7 +148,7 @@ function parse_command_line()
         default = 3600.0
 
         "--use_gpu"
-        help = "Using GPU"
+        help = "Using GPU: 0-false, 1-true"
         arg_type = Int64
         default = 0
     end
