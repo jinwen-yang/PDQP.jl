@@ -3,8 +3,10 @@ uuid = "4f24b38e-0929-4ce5-9c49-4f16085f7a3e"
 version = "0.0.0"
 
 [deps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 GZip = "92fee26a-97fe-5a0c-ad85-20a5f3185b63"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"

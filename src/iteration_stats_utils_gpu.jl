@@ -443,149 +443,149 @@ function evaluate_unscaled_iteration_stats(
     )
 end
 
-#############################
-# Below are print functions #
-#############################
-function print_to_screen_this_iteration(
-    termination_reason::Union{TerminationReason,Bool},
-    iteration::Int64,
-    verbosity::Int64,
-    termination_evaluation_frequency::Int32,
-)
-    if verbosity >= 2
-        if termination_reason == false
-        num_of_evaluations = (iteration - 1) / termination_evaluation_frequency
-        if verbosity >= 9
-            display_frequency = 1
-        elseif verbosity >= 6
-            display_frequency = 3
-        elseif verbosity >= 5
-            display_frequency = 10
-        elseif verbosity >= 4
-            display_frequency = 20
-        elseif verbosity >= 3
-            display_frequency = 50
-        else
-            return iteration == 1
-        end
-        # print_to_screen_this_iteration is true every
-        # display_frequency * termination_evaluation_frequency iterations.
-        return mod(num_of_evaluations, display_frequency) == 0
-        else
-        return true
-        end
-    else
-        return false
-    end
-end
+# #############################
+# # Below are print functions #
+# #############################
+# function print_to_screen_this_iteration(
+#     termination_reason::Union{TerminationReason,Bool},
+#     iteration::Int64,
+#     verbosity::Int64,
+#     termination_evaluation_frequency::Int32,
+# )
+#     if verbosity >= 2
+#         if termination_reason == false
+#         num_of_evaluations = (iteration - 1) / termination_evaluation_frequency
+#         if verbosity >= 9
+#             display_frequency = 1
+#         elseif verbosity >= 6
+#             display_frequency = 3
+#         elseif verbosity >= 5
+#             display_frequency = 10
+#         elseif verbosity >= 4
+#             display_frequency = 20
+#         elseif verbosity >= 3
+#             display_frequency = 50
+#         else
+#             return iteration == 1
+#         end
+#         # print_to_screen_this_iteration is true every
+#         # display_frequency * termination_evaluation_frequency iterations.
+#         return mod(num_of_evaluations, display_frequency) == 0
+#         else
+#         return true
+#         end
+#     else
+#         return false
+#     end
+# end
 
 
-function display_iteration_stats_heading()
-    Printf.@printf(
-        "%s | %s | %s | %s |",
-        rpad("runtime", 24),
-        rpad("residuals", 26),
-        rpad(" solution information", 26),
-        rpad("relative residuals", 23)
-    )
-    println("")
-    Printf.@printf(
-        "%s %s %s | %s %s  %s | %s %s %s | %s %s %s |",
-        rpad("#iter", 7),
-        rpad("#kkt", 8),
-        rpad("seconds", 7),
-        rpad("pr norm", 8),
-        rpad("du norm", 8),
-        rpad("gap", 7),
-        rpad(" pr obj", 9),
-        rpad("pr norm", 8),
-        rpad("du norm", 7),
-        rpad("rel pr", 7),
-        rpad("rel du", 7),
-        rpad("rel gap", 7)
-    )
-    print("\n")
-end
+# function display_iteration_stats_heading()
+#     Printf.@printf(
+#         "%s | %s | %s | %s |",
+#         rpad("runtime", 24),
+#         rpad("residuals", 26),
+#         rpad(" solution information", 26),
+#         rpad("relative residuals", 23)
+#     )
+#     println("")
+#     Printf.@printf(
+#         "%s %s %s | %s %s  %s | %s %s %s | %s %s %s |",
+#         rpad("#iter", 7),
+#         rpad("#kkt", 8),
+#         rpad("seconds", 7),
+#         rpad("pr norm", 8),
+#         rpad("du norm", 8),
+#         rpad("gap", 7),
+#         rpad(" pr obj", 9),
+#         rpad("pr norm", 8),
+#         rpad("du norm", 7),
+#         rpad("rel pr", 7),
+#         rpad("rel du", 7),
+#         rpad("rel gap", 7)
+#     )
+#     print("\n")
+# end
 
 
-function display_iteration_stats_heading(verbosity::Int64)
-    if verbosity >= 7
-        display_iteration_stats_heading(true)
-    elseif verbosity >= 2
-        display_iteration_stats_heading(false)
-    end
-end
+# function display_iteration_stats_heading(verbosity::Int64)
+#     if verbosity >= 7
+#         display_iteration_stats_heading(true)
+#     elseif verbosity >= 2
+#         display_iteration_stats_heading(false)
+#     end
+# end
 
-function lpad_float(number::Float64)
-    return lpad(Printf.@sprintf("%.1e", number), 8)
-end
+# function lpad_float(number::Float64)
+#     return lpad(Printf.@sprintf("%.1e", number), 8)
+# end
 
-function display_iteration_stats(
-    stats::IterationStats;
-    choice_of_norm::OptimalityNorm=L_INF,
-)
+# function display_iteration_stats(
+#     stats::IterationStats;
+#     choice_of_norm::OptimalityNorm=L_INF,
+# )
     
 
-    if length(stats.convergence_information) > 0
-        if choice_of_norm ==  L2
-            Printf.@printf(
-            "%s  %.1e  %.1e | %.1e  %.1e  %s | %s  %.1e  %.1e | %.1e %.1e %.1e |",
-            rpad(string(stats.iteration_number), 6),
-            stats.cumulative_kkt_matrix_passes,
-            stats.cumulative_time_sec,
-            stats.convergence_information[1].l2_primal_residual,
-            stats.convergence_information[1].l2_dual_residual,
-            lpad_float(
-                stats.convergence_information[1].primal_objective -
-                stats.convergence_information[1].dual_objective,
-            ),
-            lpad_float(stats.convergence_information[1].primal_objective),
-            stats.convergence_information[1].l2_primal_variable,
-            stats.convergence_information[1].l2_dual_variable,
-            stats.convergence_information[1].relative_l2_primal_residual,
-            stats.convergence_information[1].relative_l2_dual_residual,
-            stats.convergence_information[1].relative_optimality_gap
-            )
-        else
-            Printf.@printf(
-            "%s  %.1e  %.1e | %.1e  %.1e  %s | %s  %.1e  %.1e | %.1e %.1e %.1e |",
-            rpad(string(stats.iteration_number), 6),
-            stats.cumulative_kkt_matrix_passes,
-            stats.cumulative_time_sec,
-            stats.convergence_information[1].l_inf_primal_residual,
-            stats.convergence_information[1].l_inf_dual_residual,
-            lpad_float(
-                stats.convergence_information[1].primal_objective -
-                stats.convergence_information[1].dual_objective,
-            ),
-            lpad_float(stats.convergence_information[1].primal_objective),
-            stats.convergence_information[1].l_inf_primal_variable,
-            stats.convergence_information[1].l_inf_dual_variable,
-            stats.convergence_information[1].relative_l_inf_primal_residual,
-            stats.convergence_information[1].relative_l_inf_dual_residual,
-            stats.convergence_information[1].relative_optimality_gap
-            )
-        end
-    else
-        Printf.@printf(
-        "%s  %.1e  %.1e",
-        rpad(string(stats.iteration_number), 6),
-        stats.cumulative_kkt_matrix_passes,
-        stats.cumulative_time_sec
-        )
-    end
+#     if length(stats.convergence_information) > 0
+#         if choice_of_norm ==  L2
+#             Printf.@printf(
+#             "%s  %.1e  %.1e | %.1e  %.1e  %s | %s  %.1e  %.1e | %.1e %.1e %.1e |",
+#             rpad(string(stats.iteration_number), 6),
+#             stats.cumulative_kkt_matrix_passes,
+#             stats.cumulative_time_sec,
+#             stats.convergence_information[1].l2_primal_residual,
+#             stats.convergence_information[1].l2_dual_residual,
+#             lpad_float(
+#                 stats.convergence_information[1].primal_objective -
+#                 stats.convergence_information[1].dual_objective,
+#             ),
+#             lpad_float(stats.convergence_information[1].primal_objective),
+#             stats.convergence_information[1].l2_primal_variable,
+#             stats.convergence_information[1].l2_dual_variable,
+#             stats.convergence_information[1].relative_l2_primal_residual,
+#             stats.convergence_information[1].relative_l2_dual_residual,
+#             stats.convergence_information[1].relative_optimality_gap
+#             )
+#         else
+#             Printf.@printf(
+#             "%s  %.1e  %.1e | %.1e  %.1e  %s | %s  %.1e  %.1e | %.1e %.1e %.1e |",
+#             rpad(string(stats.iteration_number), 6),
+#             stats.cumulative_kkt_matrix_passes,
+#             stats.cumulative_time_sec,
+#             stats.convergence_information[1].l_inf_primal_residual,
+#             stats.convergence_information[1].l_inf_dual_residual,
+#             lpad_float(
+#                 stats.convergence_information[1].primal_objective -
+#                 stats.convergence_information[1].dual_objective,
+#             ),
+#             lpad_float(stats.convergence_information[1].primal_objective),
+#             stats.convergence_information[1].l_inf_primal_variable,
+#             stats.convergence_information[1].l_inf_dual_variable,
+#             stats.convergence_information[1].relative_l_inf_primal_residual,
+#             stats.convergence_information[1].relative_l_inf_dual_residual,
+#             stats.convergence_information[1].relative_optimality_gap
+#             )
+#         end
+#     else
+#         Printf.@printf(
+#         "%s  %.1e  %.1e",
+#         rpad(string(stats.iteration_number), 6),
+#         stats.cumulative_kkt_matrix_passes,
+#         stats.cumulative_time_sec
+#         )
+#     end
 
-    print("\n")
-end
+#     print("\n")
+# end
 
-function print_infinity_norms(convergence_info::ConvergenceInformation)
-    print("l_inf: ")
-    Printf.@printf(
-        "primal_res = %.3e, dual_res = %.3e, primal_var = %.3e, dual_var = %.3e",
-        convergence_info.l_inf_primal_residual,
-        convergence_info.l_inf_dual_residual,
-        convergence_info.l_inf_primal_variable,
-        convergence_info.l_inf_dual_variable
-    )
-    println()
-end    
+# function print_infinity_norms(convergence_info::ConvergenceInformation)
+#     print("l_inf: ")
+#     Printf.@printf(
+#         "primal_res = %.3e, dual_res = %.3e, primal_var = %.3e, dual_var = %.3e",
+#         convergence_info.l_inf_primal_residual,
+#         convergence_info.l_inf_dual_residual,
+#         convergence_info.l_inf_primal_variable,
+#         convergence_info.l_inf_dual_variable
+#     )
+#     println()
+# end    

@@ -1,9 +1,3 @@
-
-struct AdaptiveStepsizeParams
-    reduction_exponent::Float64
-    growth_exponent::Float64
-end
-
 struct ConstantStepsizeParams end
 
 struct PdhgParameters
@@ -18,7 +12,6 @@ struct PdhgParameters
     termination_criteria::TerminationCriteria
     restart_params::RestartParameters
     step_size_policy_params::Union{
-        AdaptiveStepsizeParams,
         ConstantStepsizeParams,
     }
 end
@@ -326,124 +319,6 @@ function update_solution_in_solver_state!(
 end
 
 
-
-####################################################################################
-# function compute_interaction_and_movement(
-#     solver_state::PdhgSolverState,
-#     problem::QuadraticProgrammingProblem,
-#     buffer_state::BufferState,
-#     # momentum_coefficient::Float64, #
-#     # extrapolation_coefficient::Float64, #
-# )
-#     buffer_state.delta_primal .= buffer_state.next_primal .- solver_state.current_primal_solution
-#     buffer_state.delta_dual .= buffer_state.next_dual .- solver_state.current_dual_solution
-#     buffer_state.delta_dual_product .= buffer_state.next_dual_product .- solver_state.current_dual_product
-#     buffer_state.delta_primal_obj_product .= buffer_state.next_primal_obj_product .- solver_state.current_primal_obj_product #
-    
-#     primal_dual_interaction = 2 * dot(solver_state.delta_primal, buffer_state.delta_dual_product)
-#     primal_dual_interaction += 0.5*dot(solver_state.delta_primal, problem.objective_matrix * solver_state.delta_primal)#solver_state.delta_primal_obj_product) # TODO *0.5
-#     interaction = abs(primal_dual_interaction)
-
-#     norm_delta_primal = norm(solver_state.delta_primal)
-#     norm_delta_dual = norm(buffer_state.delta_dual)
-
-#     movement = solver_state.primal_weight * norm_delta_primal^2 + (1 / solver_state.primal_weight) * norm_delta_dual^2
-
-#     return interaction, movement
-# end
-
-# function take_step!(
-#     step_params::AdaptiveStepsizeParams,
-#     problem::QuadraticProgrammingProblem,
-#     solver_state::PdhgSolverState,
-#     buffer_state::BufferState,
-# )
-#     step_size = solver_state.step_size
-#     done = false
-
-#     momentum_coefficient = 2.0 + solver_state.solution_weighted_avg.primal_solutions_count
-#     extrapolation_coefficient = 1.0
-    
-#     while !done
-#         solver_state.total_number_iterations += 1
-
-#         compute_next_primal_solution!(
-#             problem,
-#             solver_state.current_primal_solution,
-#             solver_state.current_dual_product,
-#             solver_state.current_primal_obj_product,
-#             solver_state.solution_weighted_avg.avg_primal_obj_product,
-#             momentum_coefficient,
-#             step_size,
-#             solver_state.primal_weight,
-#             buffer_state.next_primal,
-#             buffer_state.next_primal_product,
-#             buffer_state.next_primal_obj_product,
-#         )
-
-#         compute_next_dual_solution!(
-#             problem,
-#             solver_state.current_dual_solution,
-#             extrapolation_coefficient,
-#             step_size,
-#             solver_state.primal_weight,
-#             buffer_state.next_primal_product,
-#             solver_state.current_primal_product,
-#             buffer_state.next_dual,
-#             buffer_state.next_dual_product,
-#         )
-
-#         interaction, movement = compute_interaction_and_movement(
-#             solver_state,
-#             problem,
-#             buffer_state,
-#             # momentum_coefficient,
-#             # extrapolation_coefficient,
-#         )
-
-#         solver_state.cumulative_kkt_passes += 1
-
-#         if interaction > 0
-#             step_size_limit = movement / interaction 
-#             if movement == 0.0
-#                 # The algorithm will terminate at the beginning of the next iteration
-#                 solver_state.numerical_error = true
-#                 break
-#             end
-#         else
-#             step_size_limit = Inf
-#         end
-
-#         # @show interaction, movement
-
-#         if step_size <= step_size_limit
-#             update_solution_in_solver_state!(
-#                 solver_state, 
-#                 buffer_state,
-#             )
-#             done = true
-#         end
-
-#         # @show step_size, step_size_limit, done
-
-
-#         first_term = (1 - 1/(solver_state.total_number_iterations + 1)^(step_params.reduction_exponent)) * step_size_limit
-
-#         second_term = (1 + 1/(solver_state.total_number_iterations + 1)^(step_params.growth_exponent)) * step_size
-
-#         step_size = min(first_term, second_term)
-    
-#     end  
-    
-#     solver_state.step_size = step_size
-# end
-####################################################################################
-
-
-
-"""
-Take PDHG step with ConstantStepsize
-"""
 function take_step!(
     step_params::ConstantStepsizeParams,
     problem::QuadraticProgrammingProblem,
@@ -545,8 +420,6 @@ function optimize(
 
     norm_A, number_of_power_iterations_A = estimate_maximum_singular_value(d_problem.constraint_matrix)
 
-    @show norm_Q, norm_A
-
     # initialization
     solver_state = PdhgSolverState(
         zeros(Float64, primal_size),    # current_primal_solution
@@ -621,42 +494,23 @@ function optimize(
     buffer_primal_gradient = scaled_problem.scaled_qp.objective_vector .- solver_state.current_dual_product
     buffer_primal_gradient .+= solver_state.current_primal_obj_product
 
-    # stepsize
-    if params.step_size_policy_params isa AdaptiveStepsizeParams # TODO: decide initial stepsize
-        solver_state.cumulative_kkt_passes += 0.5
-        solver_state.step_size = 1.0 / (norm(scaled_problem.scaled_qp.objective_matrix, Inf)+norm(scaled_problem.scaled_qp.constraint_matrix, Inf)) # 
+    
+    solver_state.cumulative_kkt_passes += number_of_power_iterations_Q + number_of_power_iterations_A
 
-        if params.scale_invariant_initial_primal_weight
-            solver_state.primal_weight = select_initial_primal_weight(
-                scaled_problem.scaled_qp,
-                1.0,
-                1.0,
-                params.primal_importance,
-                params.verbosity,
-            )
-        else
-            solver_state.primal_weight = params.primal_importance
-        end
-
+    # solver_state.step_size = sqrt(1 / norm_A / (2 * norm_Q + norm_A))
+    # solver_state.primal_weight = sqrt((2 * norm_Q + norm_A) / norm_A)
+    if params.scale_invariant_initial_primal_weight
+        solver_state.primal_weight = select_initial_primal_weight(
+            scaled_problem.scaled_qp,
+            1.0,
+            1.0,
+            params.primal_importance,
+            params.verbosity,
+        )
     else
-        # norm_Q, norm_A = solver_state.l2_norm_objective_matrix, solver_state.l2_norm_constraint_matrix
-        solver_state.cumulative_kkt_passes += number_of_power_iterations_Q + number_of_power_iterations_A
-
-        # solver_state.step_size = sqrt(1 / norm_A / (2 * norm_Q + norm_A))
-        # solver_state.primal_weight = sqrt((2 * norm_Q + norm_A) / norm_A)
-        if params.scale_invariant_initial_primal_weight
-            solver_state.primal_weight = select_initial_primal_weight(
-                scaled_problem.scaled_qp,
-                1.0,
-                1.0,
-                params.primal_importance,
-                params.verbosity,
-            )
-        else
-            solver_state.primal_weight = params.primal_importance
-        end
-        solver_state.step_size = 0.99 * 2 / (norm_Q / solver_state.primal_weight + sqrt(4*norm_A^2 + norm_Q^2 / solver_state.primal_weight^2))
+        solver_state.primal_weight = params.primal_importance
     end
+    solver_state.step_size = 0.99 * 2 / (norm_Q / solver_state.primal_weight + sqrt(4*norm_A^2 + norm_Q^2 / solver_state.primal_weight^2))
 
     KKT_PASSES_PER_TERMINATION_EVALUATION = 2.0
 
@@ -733,7 +587,6 @@ function optimize(
                 buffer_avg.avg_primal_obj_product,
                 buffer_original,
                 buffer_kkt,
-                buffer_lp,
             )
             method_specific_stats = current_iteration_stats.method_specific_stats
             method_specific_stats["time_spent_doing_basic_algorithm"] =
@@ -824,33 +677,22 @@ function optimize(
             )
 
             if current_iteration_stats.restart_used != RESTART_CHOICE_NO_RESTART
-                if params.step_size_policy_params isa AdaptiveStepsizeParams 
-                    solver_state.primal_weight = compute_new_primal_weight(
-                        last_restart_info,
-                        solver_state.primal_weight,
-                        primal_weight_update_smoothing,
-                        params.verbosity,
-                    )
-                    solver_state.ratio_step_sizes = 1.0
-                else
-                    # solver_state.step_size = sqrt(1 / norm_A / (2 * norm_Q + norm_A))
-                    # solver_state.primal_weight = sqrt((2 * norm_Q + norm_A) / norm_A)
-                    solver_state.primal_weight = compute_new_primal_weight(
-                        last_restart_info,
-                        solver_state.primal_weight,
-                        primal_weight_update_smoothing,
-                        params.verbosity,
-                    )
+                
+                solver_state.primal_weight = compute_new_primal_weight(
+                    last_restart_info,
+                    solver_state.primal_weight,
+                    primal_weight_update_smoothing,
+                    params.verbosity,
+                )
 
-                    # scale_norm = min(norm_Q/norm_A, norm_A/norm_Q)
+                # scale_norm = min(norm_Q/norm_A, norm_A/norm_Q)
 
-                    # if min(solver_state.primal_weight, 1 / solver_state.primal_weight) < scale_norm * 5e-4
-                    #     primal_weight_update_smoothing = 0.0
-                    #     solver_state.primal_weight = 1.0
-                    # end
+                # if min(solver_state.primal_weight, 1 / solver_state.primal_weight) < scale_norm * 5e-4
+                #     primal_weight_update_smoothing = 0.0
+                #     solver_state.primal_weight = 1.0
+                # end
 
-                    solver_state.step_size = 0.99 * 2 / (norm_Q / solver_state.primal_weight + sqrt(4*norm_A^2 + norm_Q^2 / solver_state.primal_weight^2))
-                end
+                solver_state.step_size = 0.99 * 2 / (norm_Q / solver_state.primal_weight + sqrt(4*norm_A^2 + norm_Q^2 / solver_state.primal_weight^2))
             end
         end
 

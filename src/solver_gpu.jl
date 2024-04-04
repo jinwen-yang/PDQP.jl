@@ -1,26 +1,21 @@
-struct AdaptiveStepsizeParams
-    reduction_exponent::Float64
-    growth_exponent::Float64
-end
+# struct ConstantStepsizeParams end
 
-struct ConstantStepsizeParams end
-
-struct PdhgParameters
-    l_inf_ruiz_iterations::Int
-    l2_norm_rescaling::Bool
-    pock_chambolle_alpha::Union{Float64,Nothing}
-    primal_importance::Float64
-    scale_invariant_initial_primal_weight::Bool
-    verbosity::Int64
-    record_iteration_stats::Bool
-    termination_evaluation_frequency::Int32
-    termination_criteria::TerminationCriteria
-    restart_params::RestartParameters
-    step_size_policy_params::Union{
-        AdaptiveStepsizeParams,
-        ConstantStepsizeParams,
-    }
-end
+# struct PdhgParameters
+#     l_inf_ruiz_iterations::Int
+#     l2_norm_rescaling::Bool
+#     pock_chambolle_alpha::Union{Float64,Nothing}
+#     primal_importance::Float64
+#     scale_invariant_initial_primal_weight::Bool
+#     verbosity::Int64
+#     record_iteration_stats::Bool
+#     termination_evaluation_frequency::Int32
+#     termination_criteria::TerminationCriteria
+#     restart_params::RestartParameters
+#     step_size_policy_params::Union{
+#         AdaptiveStepsizeParams,
+#         ConstantStepsizeParams,
+#     }
+# end
 
 mutable struct CuPdhgSolverState
     current_primal_solution::CuVector{Float64}
@@ -56,14 +51,14 @@ mutable struct CuBufferState
 end
 
 
-function define_norms(
-    primal_size::Int64,
-    dual_size::Int64,
-    step_size::Float64,
-    primal_weight::Float64,
-)
-    return 1 / step_size * primal_weight, 1 / step_size / primal_weight
-end
+# function define_norms(
+#     primal_size::Int64,
+#     dual_size::Int64,
+#     step_size::Float64,
+#     primal_weight::Float64,
+# )
+#     return 1 / step_size * primal_weight, 1 / step_size / primal_weight
+# end
   
 
 function pdhg_specific_log(
@@ -97,84 +92,84 @@ function pdhg_specific_log(
     end
 end
 
-function pdhg_final_log(
-    problem::QuadraticProgrammingProblem,
-    avg_primal_solution::Vector{Float64},
-    avg_dual_solution::Vector{Float64},
-    verbosity::Int64,
-    iteration::Int64,
-    termination_reason::TerminationReason,
-    last_iteration_stats::IterationStats,
-)
+# function pdhg_final_log(
+#     problem::QuadraticProgrammingProblem,
+#     avg_primal_solution::Vector{Float64},
+#     avg_dual_solution::Vector{Float64},
+#     verbosity::Int64,
+#     iteration::Int64,
+#     termination_reason::TerminationReason,
+#     last_iteration_stats::IterationStats,
+# )
 
-    if verbosity >= 2
-        println("Avg solution:")
-        Printf.@printf(
-            "  pr_infeas=%12g pr_obj=%15.10g dual_infeas=%12g dual_obj=%15.10g\n",
-            last_iteration_stats.convergence_information[1].l_inf_primal_residual,
-            last_iteration_stats.convergence_information[1].primal_objective,
-            last_iteration_stats.convergence_information[1].l_inf_dual_residual,
-            last_iteration_stats.convergence_information[1].dual_objective
-        )
-        Printf.@printf(
-            "  primal norms: L1=%15.10g, L2=%15.10g, Linf=%15.10g\n",
-            norm(avg_primal_solution, 1),
-            norm(avg_primal_solution),
-            norm(avg_primal_solution, Inf)
-        )
-        Printf.@printf(
-            "  dual norms:   L1=%15.10g, L2=%15.10g, Linf=%15.10g\n",
-            norm(avg_dual_solution, 1),
-            norm(avg_dual_solution),
-            norm(avg_dual_solution, Inf)
-        )
-    end
+#     if verbosity >= 2
+#         println("Avg solution:")
+#         Printf.@printf(
+#             "  pr_infeas=%12g pr_obj=%15.10g dual_infeas=%12g dual_obj=%15.10g\n",
+#             last_iteration_stats.convergence_information[1].l_inf_primal_residual,
+#             last_iteration_stats.convergence_information[1].primal_objective,
+#             last_iteration_stats.convergence_information[1].l_inf_dual_residual,
+#             last_iteration_stats.convergence_information[1].dual_objective
+#         )
+#         Printf.@printf(
+#             "  primal norms: L1=%15.10g, L2=%15.10g, Linf=%15.10g\n",
+#             norm(avg_primal_solution, 1),
+#             norm(avg_primal_solution),
+#             norm(avg_primal_solution, Inf)
+#         )
+#         Printf.@printf(
+#             "  dual norms:   L1=%15.10g, L2=%15.10g, Linf=%15.10g\n",
+#             norm(avg_dual_solution, 1),
+#             norm(avg_dual_solution),
+#             norm(avg_dual_solution, Inf)
+#         )
+#     end
 
-    generic_final_log(
-        problem,
-        avg_primal_solution,
-        avg_dual_solution,
-        last_iteration_stats,
-        verbosity,
-        iteration,
-        termination_reason,
-    )
-end
+#     generic_final_log(
+#         problem,
+#         avg_primal_solution,
+#         avg_dual_solution,
+#         last_iteration_stats,
+#         verbosity,
+#         iteration,
+#         termination_reason,
+#     )
+# end
 
-function power_method_failure_probability(
-    dimension::Int64,
-    epsilon::Float64,
-    k::Int64,
-)
-    if k < 2 || epsilon <= 0.0
-        return 1.0
-    end
-    return min(0.824, 0.354 / sqrt(epsilon * (k - 1))) * sqrt(dimension) * (1.0 - epsilon)^(k - 1 / 2) # FirstOrderLp.jl old version (epsilon * (k - 1)) instead of sqrt(epsilon * (k - 1)))
-end
+# function power_method_failure_probability(
+#     dimension::Int64,
+#     epsilon::Float64,
+#     k::Int64,
+# )
+#     if k < 2 || epsilon <= 0.0
+#         return 1.0
+#     end
+#     return min(0.824, 0.354 / sqrt(epsilon * (k - 1))) * sqrt(dimension) * (1.0 - epsilon)^(k - 1 / 2) # FirstOrderLp.jl old version (epsilon * (k - 1)) instead of sqrt(epsilon * (k - 1)))
+# end
 
-function estimate_maximum_singular_value(
-    matrix::SparseMatrixCSC{Float64,Int64};
-    probability_of_failure = 0.01::Float64,
-    desired_relative_error = 0.1::Float64,
-    seed::Int64 = 1,
-)
-    epsilon = 1.0 - (1.0 - desired_relative_error)^2
-    x = randn(Random.MersenneTwister(seed), size(matrix, 2))
+# function estimate_maximum_singular_value(
+#     matrix::SparseMatrixCSC{Float64,Int64};
+#     probability_of_failure = 0.01::Float64,
+#     desired_relative_error = 0.1::Float64,
+#     seed::Int64 = 1,
+# )
+#     epsilon = 1.0 - (1.0 - desired_relative_error)^2
+#     x = randn(Random.MersenneTwister(seed), size(matrix, 2))
 
-    number_of_power_iterations = 0
-    while power_method_failure_probability(
-        size(matrix, 2),
-        epsilon,
-        number_of_power_iterations,
-    ) > probability_of_failure
-        x = x / norm(x, 2)
-        x = matrix' * (matrix * x)
-        number_of_power_iterations += 1
-    end
+#     number_of_power_iterations = 0
+#     while power_method_failure_probability(
+#         size(matrix, 2),
+#         epsilon,
+#         number_of_power_iterations,
+#     ) > probability_of_failure
+#         x = x / norm(x, 2)
+#         x = matrix' * (matrix * x)
+#         number_of_power_iterations += 1
+#     end
     
-    return sqrt(dot(x, matrix' * (matrix * x)) / norm(x, 2)^2),
-    number_of_power_iterations
-end
+#     return sqrt(dot(x, matrix' * (matrix * x)) / norm(x, 2)^2),
+#     number_of_power_iterations
+# end
 
 """
 Kernel to compute primal solution in the next iteration
@@ -424,8 +419,6 @@ function optimize_gpu(
     norm_Q, number_of_power_iterations_Q = estimate_maximum_singular_value(scaled_problem.scaled_qp.objective_matrix)
     norm_A, number_of_power_iterations_A = estimate_maximum_singular_value(scaled_problem.scaled_qp.constraint_matrix)
 
-    @show norm_Q, norm_A
-
     # initialization
     solver_state = CuPdhgSolverState(
         CUDA.zeros(Float64, primal_size),    # current_primal_solution
@@ -613,7 +606,6 @@ function optimize_gpu(
                 buffer_avg.avg_primal_obj_product,
                 buffer_original,
                 buffer_kkt,
-                buffer_lp,
             )
             method_specific_stats = current_iteration_stats.method_specific_stats
             method_specific_stats["time_spent_doing_basic_algorithm"] =

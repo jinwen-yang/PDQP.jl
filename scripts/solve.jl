@@ -43,9 +43,9 @@ function solve_instance_and_output(
         end
 
         if gpu_flag
-            output::PDQP.SaddlePointOutput = PDQP.optimize_gpu(parameters, qp)
+            output = PDQP.optimize_gpu(parameters, qp)
         else
-            output::PDQP.SaddlePointOutput = PDQP.optimize(parameters, qp)
+            output = PDQP.optimize(parameters, qp)
         end
     
         log = PDQP.SolveLog()
@@ -149,7 +149,7 @@ function parse_command_line()
 
         "--use_gpu"
         help = "Using GPU"
-        arg_type = Int32
+        arg_type = Int64
         default = 0
     end
 

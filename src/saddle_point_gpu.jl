@@ -1,63 +1,63 @@
 
-struct SaddlePointOutput
-    """
-    The output primal solution vector.
-    """
-    primal_solution::Vector{Float64}
+# struct SaddlePointOutput
+#     """
+#     The output primal solution vector.
+#     """
+#     primal_solution::Vector{Float64}
 
-    """
-    The output dual solution vector.
-    """
-    dual_solution::Vector{Float64}
+#     """
+#     The output dual solution vector.
+#     """
+#     dual_solution::Vector{Float64}
 
-    """
-    One of the possible values from the TerminationReason enum.
-    """
-    termination_reason::TerminationReason
+#     """
+#     One of the possible values from the TerminationReason enum.
+#     """
+#     termination_reason::TerminationReason
 
-    """
-    Extra information about the termination reason (may be empty).
-    """
-    termination_string::String
+#     """
+#     Extra information about the termination reason (may be empty).
+#     """
+#     termination_string::String
 
-    """
-    The total number of algorithmic iterations for the solve.
-    """
-    iteration_count::Int32
+#     """
+#     The total number of algorithmic iterations for the solve.
+#     """
+#     iteration_count::Int32
 
-    """
-    Detailed statistics about a subset of the iterations. The collection frequency
-    is defined by algorithm parameters.
-    """
-    iteration_stats::Vector{IterationStats}
-end
+#     """
+#     Detailed statistics about a subset of the iterations. The collection frequency
+#     is defined by algorithm parameters.
+#     """
+#     iteration_stats::Vector{IterationStats}
+# end
 
 
-"""
-Return the unscaled primal and dual solutions
-"""
-function unscaled_saddle_point_output(
-    scaled_problem::ScaledQpProblem,
-    primal_solution::AbstractVector{Float64},
-    dual_solution::AbstractVector{Float64},
-    termination_reason::TerminationReason,
-    iterations_completed::Int64,
-    iteration_stats::Vector{IterationStats},
-)
-    # Unscale iterates.
-    original_primal_solution =
-        primal_solution ./ scaled_problem.variable_rescaling
-    original_dual_solution = dual_solution ./ scaled_problem.constraint_rescaling
+# """
+# Return the unscaled primal and dual solutions
+# """
+# function unscaled_saddle_point_output(
+#     scaled_problem::ScaledQpProblem,
+#     primal_solution::AbstractVector{Float64},
+#     dual_solution::AbstractVector{Float64},
+#     termination_reason::TerminationReason,
+#     iterations_completed::Int64,
+#     iteration_stats::Vector{IterationStats},
+# )
+#     # Unscale iterates.
+#     original_primal_solution =
+#         primal_solution ./ scaled_problem.variable_rescaling
+#     original_dual_solution = dual_solution ./ scaled_problem.constraint_rescaling
   
-    return SaddlePointOutput(
-        original_primal_solution,
-        original_dual_solution,
-        termination_reason,
-        termination_reason_to_string(termination_reason),
-        iterations_completed,
-        iteration_stats,
-    )
-end
+#     return SaddlePointOutput(
+#         original_primal_solution,
+#         original_dual_solution,
+#         termination_reason,
+#         termination_reason_to_string(termination_reason),
+#         iterations_completed,
+#         iteration_stats,
+#     )
+# end
 
 function weighted_norm(
     vec::CuVector{Float64},
@@ -275,10 +275,10 @@ function compute_average!(
 end
 
 
-mutable struct KKTrestart
-    kkt_residual::Float64
-    relative_kkt_residual::Float64
-end
+# mutable struct KKTrestart
+#     kkt_residual::Float64
+#     relative_kkt_residual::Float64
+# end
 
 """
 Compute weighted KKT residual for restarting
@@ -410,99 +410,99 @@ function create_last_restart_info(
     )
 end
 
-"""
-RestartScheme enum
--  `NO_RESTARTS`: No restarts are performed.
--  `FIXED_FREQUENCY`: does a restart every [restart_frequency] iterations where [restart_frequency] is a user-specified number.
--  `ADAPTIVE_KKT`: a heuristic based on the KKT residual to decide when to restart. 
-"""
-@enum RestartScheme NO_RESTARTS FIXED_FREQUENCY ADAPTIVE_KKT
+# """
+# RestartScheme enum
+# -  `NO_RESTARTS`: No restarts are performed.
+# -  `FIXED_FREQUENCY`: does a restart every [restart_frequency] iterations where [restart_frequency] is a user-specified number.
+# -  `ADAPTIVE_KKT`: a heuristic based on the KKT residual to decide when to restart. 
+# """
+# @enum RestartScheme NO_RESTARTS FIXED_FREQUENCY ADAPTIVE_KKT
 
-"""
-RestartToCurrentMetric enum
-- `NO_RESTART_TO_CURRENT`: Always reset to the average.
-- `KKT_GREEDY`: Decide between the average current based on which has a smaller KKT.
-"""
-@enum RestartToCurrentMetric NO_RESTART_TO_CURRENT KKT_GREEDY
+# """
+# RestartToCurrentMetric enum
+# - `NO_RESTART_TO_CURRENT`: Always reset to the average.
+# - `KKT_GREEDY`: Decide between the average current based on which has a smaller KKT.
+# """
+# @enum RestartToCurrentMetric NO_RESTART_TO_CURRENT KKT_GREEDY
 
 
-mutable struct RestartParameters
-    """
-    Specifies what type of restart scheme is used.
-    """
-    restart_scheme::RestartScheme
-    """
-    Specifies how we decide between restarting to the average or current.
-    """
-    restart_to_current_metric::RestartToCurrentMetric
-    """
-    If `restart_scheme` = `FIXED_FREQUENCY` then this number determines the frequency that the algorithm is restarted.
-    """
-    restart_frequency_if_fixed::Int64
-    """
-    If in the past `artificial_restart_threshold` fraction of iterations no restart has occurred then a restart will be artificially triggered. The value should be between zero and one. Smaller values will have more frequent artificial restarts than larger values.
-    """
-    artificial_restart_threshold::Float64
-    """
-    Only applies when `restart_scheme` = `ADAPTIVE`. It is the threshold improvement in the quality of the current/average iterate compared with that  of the last restart that will trigger a restart. The value of this parameter should be between zero and one. Smaller values make restarts less frequent, larger values make restarts more frequent.
-    """
-    sufficient_reduction_for_restart::Float64
-    """
-    Only applies when `restart_scheme` = `ADAPTIVE`. It is the threshold
-    improvement in the quality of the current/average iterate compared with that of the last restart that is neccessary for a restart to be triggered. If this thrshold is met and the quality of the iterates appear to be getting worse then a restart is triggered. The value of this parameter should be between zero and one, and greater than sufficient_reduction_for_restart. Smaller values make restarts less frequent, larger values make restarts more frequent.
-    """
-    necessary_reduction_for_restart::Float64
-    """
-    Controls the exponential smoothing of log(primal_weight) when the primal weight is updated (i.e., on every restart). Must be between 0.0 and 1.0 inclusive. At 0.0 the primal weight remains frozen at its initial value.
-    """
-    primal_weight_update_smoothing::Float64
-end
+# mutable struct RestartParameters
+#     """
+#     Specifies what type of restart scheme is used.
+#     """
+#     restart_scheme::RestartScheme
+#     """
+#     Specifies how we decide between restarting to the average or current.
+#     """
+#     restart_to_current_metric::RestartToCurrentMetric
+#     """
+#     If `restart_scheme` = `FIXED_FREQUENCY` then this number determines the frequency that the algorithm is restarted.
+#     """
+#     restart_frequency_if_fixed::Int64
+#     """
+#     If in the past `artificial_restart_threshold` fraction of iterations no restart has occurred then a restart will be artificially triggered. The value should be between zero and one. Smaller values will have more frequent artificial restarts than larger values.
+#     """
+#     artificial_restart_threshold::Float64
+#     """
+#     Only applies when `restart_scheme` = `ADAPTIVE`. It is the threshold improvement in the quality of the current/average iterate compared with that  of the last restart that will trigger a restart. The value of this parameter should be between zero and one. Smaller values make restarts less frequent, larger values make restarts more frequent.
+#     """
+#     sufficient_reduction_for_restart::Float64
+#     """
+#     Only applies when `restart_scheme` = `ADAPTIVE`. It is the threshold
+#     improvement in the quality of the current/average iterate compared with that of the last restart that is neccessary for a restart to be triggered. If this thrshold is met and the quality of the iterates appear to be getting worse then a restart is triggered. The value of this parameter should be between zero and one, and greater than sufficient_reduction_for_restart. Smaller values make restarts less frequent, larger values make restarts more frequent.
+#     """
+#     necessary_reduction_for_restart::Float64
+#     """
+#     Controls the exponential smoothing of log(primal_weight) when the primal weight is updated (i.e., on every restart). Must be between 0.0 and 1.0 inclusive. At 0.0 the primal weight remains frozen at its initial value.
+#     """
+#     primal_weight_update_smoothing::Float64
+# end
 
-"""
-Construct restart parameters
-"""
-function construct_restart_parameters(
-    restart_scheme::RestartScheme,
-    restart_to_current_metric::RestartToCurrentMetric,
-    restart_frequency_if_fixed::Int64,
-    artificial_restart_threshold::Float64,
-    sufficient_reduction_for_restart::Float64,
-    necessary_reduction_for_restart::Float64,
-    primal_weight_update_smoothing::Float64,
-)
-    @assert restart_frequency_if_fixed > 1
-    @assert 0.0 < artificial_restart_threshold <= 1.0
-    @assert 0.0 <
-            sufficient_reduction_for_restart <=
-            necessary_reduction_for_restart <=
-            1.0
-    @assert 0.0 <= primal_weight_update_smoothing <= 1.0
+# """
+# Construct restart parameters
+# """
+# function construct_restart_parameters(
+#     restart_scheme::RestartScheme,
+#     restart_to_current_metric::RestartToCurrentMetric,
+#     restart_frequency_if_fixed::Int64,
+#     artificial_restart_threshold::Float64,
+#     sufficient_reduction_for_restart::Float64,
+#     necessary_reduction_for_restart::Float64,
+#     primal_weight_update_smoothing::Float64,
+# )
+#     @assert restart_frequency_if_fixed > 1
+#     @assert 0.0 < artificial_restart_threshold <= 1.0
+#     @assert 0.0 <
+#             sufficient_reduction_for_restart <=
+#             necessary_reduction_for_restart <=
+#             1.0
+#     @assert 0.0 <= primal_weight_update_smoothing <= 1.0
   
-    return RestartParameters(
-        restart_scheme,
-        restart_to_current_metric,
-        restart_frequency_if_fixed,
-        artificial_restart_threshold,
-        sufficient_reduction_for_restart,
-        necessary_reduction_for_restart,
-        primal_weight_update_smoothing,
-    )
-end
+#     return RestartParameters(
+#         restart_scheme,
+#         restart_to_current_metric,
+#         restart_frequency_if_fixed,
+#         artificial_restart_threshold,
+#         sufficient_reduction_for_restart,
+#         necessary_reduction_for_restart,
+#         primal_weight_update_smoothing,
+#     )
+# end
 
-"""
-Check if restart at average solutions
-"""
-function should_reset_to_average(
-    current::KKTrestart,
-    average::KKTrestart,
-    restart_to_current_metric::RestartToCurrentMetric,
-)
-    if restart_to_current_metric == KKT_GREEDY
-        return current.relative_kkt_residual  >=  average.relative_kkt_residual #  current.kkt_residual  >=  average.kkt_residual #
-    else
-        return true # reset to average
-    end
-end
+# """
+# Check if restart at average solutions
+# """
+# function should_reset_to_average(
+#     current::KKTrestart,
+#     average::KKTrestart,
+#     restart_to_current_metric::RestartToCurrentMetric,
+# )
+#     if restart_to_current_metric == KKT_GREEDY
+#         return current.relative_kkt_residual  >=  average.relative_kkt_residual #  current.kkt_residual  >=  average.kkt_residual #
+#     else
+#         return true # reset to average
+#     end
+# end
 
 """
 Check restart criteria based on weighted KKT
@@ -784,74 +784,74 @@ function update_last_restart_info!(
 end
 
 
-function point_type_label(point_type::PointType)
-    if point_type == POINT_TYPE_CURRENT_ITERATE
-        return "current"
-    elseif point_type == POINT_TYPE_AVERAGE_ITERATE
-        return "average"
-    elseif point_type == POINT_TYPE_ITERATE_DIFFERENCE
-        return "difference"
-    else
-        return "unknown PointType"
-    end
-end
+# function point_type_label(point_type::PointType)
+#     if point_type == POINT_TYPE_CURRENT_ITERATE
+#         return "current"
+#     elseif point_type == POINT_TYPE_AVERAGE_ITERATE
+#         return "average"
+#     elseif point_type == POINT_TYPE_ITERATE_DIFFERENCE
+#         return "difference"
+#     else
+#         return "unknown PointType"
+#     end
+# end
 
 
-function generic_final_log(
-    problem::QuadraticProgrammingProblem,
-    current_primal_solution::Vector{Float64},
-    current_dual_solution::Vector{Float64},
-    last_iteration_stats::IterationStats,
-    verbosity::Int64,
-    iteration::Int64,
-    termination_reason::TerminationReason,
-)
-    if verbosity >= 1
-        print("Terminated after $iteration iterations: ")
-        println(termination_reason_to_string(termination_reason))
-    end
+# function generic_final_log(
+#     problem::QuadraticProgrammingProblem,
+#     current_primal_solution::Vector{Float64},
+#     current_dual_solution::Vector{Float64},
+#     last_iteration_stats::IterationStats,
+#     verbosity::Int64,
+#     iteration::Int64,
+#     termination_reason::TerminationReason,
+# )
+#     if verbosity >= 1
+#         print("Terminated after $iteration iterations: ")
+#         println(termination_reason_to_string(termination_reason))
+#     end
 
-    method_specific_stats = last_iteration_stats.method_specific_stats
-    if verbosity >= 3
-        for convergence_information in last_iteration_stats.convergence_information
-            Printf.@printf(
-                "For %s candidate:\n",
-                point_type_label(convergence_information.candidate_type)
-            )
-            # Print more decimal places for the primal and dual objective.
-            Printf.@printf(
-                "Primal objective: %f, ",
-                convergence_information.primal_objective
-            )
-            Printf.@printf(
-                "dual objective: %f, ",
-                convergence_information.dual_objective
-            )
-            Printf.@printf(
-                "corrected dual objective: %f \n",
-                convergence_information.corrected_dual_objective
-            )
-        end
-    end
-    if verbosity >= 4
-        Printf.@printf(
-            "Time (seconds):\n - Basic algorithm: %.2e\n - Full algorithm:  %.2e\n",
-            method_specific_stats["time_spent_doing_basic_algorithm"],
-            last_iteration_stats.cumulative_time_sec,
-        )
-    end
+#     method_specific_stats = last_iteration_stats.method_specific_stats
+#     if verbosity >= 3
+#         for convergence_information in last_iteration_stats.convergence_information
+#             Printf.@printf(
+#                 "For %s candidate:\n",
+#                 point_type_label(convergence_information.candidate_type)
+#             )
+#             # Print more decimal places for the primal and dual objective.
+#             Printf.@printf(
+#                 "Primal objective: %f, ",
+#                 convergence_information.primal_objective
+#             )
+#             Printf.@printf(
+#                 "dual objective: %f, ",
+#                 convergence_information.dual_objective
+#             )
+#             Printf.@printf(
+#                 "corrected dual objective: %f \n",
+#                 convergence_information.corrected_dual_objective
+#             )
+#         end
+#     end
+#     if verbosity >= 4
+#         Printf.@printf(
+#             "Time (seconds):\n - Basic algorithm: %.2e\n - Full algorithm:  %.2e\n",
+#             method_specific_stats["time_spent_doing_basic_algorithm"],
+#             last_iteration_stats.cumulative_time_sec,
+#         )
+#     end
 
-    if verbosity >= 7
-        for convergence_information in last_iteration_stats.convergence_information
-            print_infinity_norms(convergence_information)
-        end
-        print_variable_and_constraint_hardness(
-            problem,
-            current_primal_solution,
-            current_dual_solution,
-        )
-    end
-end
+#     if verbosity >= 7
+#         for convergence_information in last_iteration_stats.convergence_information
+#             print_infinity_norms(convergence_information)
+#         end
+#         print_variable_and_constraint_hardness(
+#             problem,
+#             current_primal_solution,
+#             current_dual_solution,
+#         )
+#     end
+# end
 
 """
 Initialize primal weight
