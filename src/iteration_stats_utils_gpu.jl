@@ -10,7 +10,7 @@ mutable struct CuBufferKKTState
     dual_solution::CuVector{Float64}
     primal_product::CuVector{Float64}
     primal_gradient::CuVector{Float64}
-    primal_obj_product::CuVector{Float64} #
+    primal_obj_product::CuVector{Float64} 
     lower_variable_violation::CuVector{Float64}
     upper_variable_violation::CuVector{Float64}
     constraint_violation::CuVector{Float64}
@@ -242,7 +242,7 @@ function compute_convergence_information(
     eps_ratio::Float64,
     candidate_type::PointType,
     primal_product::CuVector{Float64},
-    dual_product::CuVector{Float64}, #
+    dual_product::CuVector{Float64}, 
     primal_gradient::CuVector{Float64},
     primal_obj_product::CuVector{Float64},
     buffer_kkt::CuBufferKKTState,
@@ -264,14 +264,13 @@ function compute_convergence_information(
     convergence_info.l2_primal_residual = CUDA.norm([buffer_kkt.constraint_violation; buffer_kkt.lower_variable_violation; buffer_kkt.upper_variable_violation], 2)
     convergence_info.relative_l_inf_primal_residual =
         convergence_info.l_inf_primal_residual /
-        (eps_ratio + max(qp_cache.l_inf_norm_primal_right_hand_side, CUDA.norm(buffer_kkt.primal_product, Inf))) #
+        (eps_ratio + max(qp_cache.l_inf_norm_primal_right_hand_side, CUDA.norm(buffer_kkt.primal_product, Inf))) 
     convergence_info.relative_l2_primal_residual =
         convergence_info.l2_primal_residual /
-        (eps_ratio + qp_cache.l2_norm_primal_right_hand_side + CUDA.norm(buffer_kkt.primal_product, 2)) #
+        (eps_ratio + qp_cache.l2_norm_primal_right_hand_side + CUDA.norm(buffer_kkt.primal_product, 2)) 
     convergence_info.l_inf_primal_variable = CUDA.norm(buffer_kkt.primal_solution, Inf)
     convergence_info.l2_primal_variable = CUDA.norm(buffer_kkt.primal_solution, 2)
 
-    # dual_product = problem.objective_vector .+ buffer_kkt.primal_obj_product .- buffer_kkt.primal_gradient
     
 
     compute_dual_stats!(problem, buffer_kkt)
@@ -290,9 +289,6 @@ function compute_convergence_information(
     convergence_info.corrected_dual_objective = corrected_dual_obj(buffer_kkt)
 
     gap = abs(convergence_info.primal_objective - convergence_info.dual_objective)
-    # abs_obj =
-    #     abs(convergence_info.primal_objective) +
-    #     abs(convergence_info.dual_objective)
     abs_obj =
         max(abs(convergence_info.primal_objective) ,
         abs(convergence_info.dual_objective))
@@ -313,8 +309,6 @@ function compute_iteration_stats(
     qp_cache::CachedQuadraticProgramInfo,
     primal_iterate::CuVector{Float64},
     dual_iterate::CuVector{Float64},
-    primal_ray_estimate::CuVector{Float64},
-    dual_ray_estimate::CuVector{Float64},
     iteration_number::Integer,
     cumulative_kkt_matrix_passes::Float64,
     cumulative_time_sec::Float64,
@@ -324,11 +318,9 @@ function compute_iteration_stats(
     primal_weight::Float64,
     candidate_type::PointType,
     primal_product::CuVector{Float64},
-    dual_product::CuVector{Float64}, #
+    dual_product::CuVector{Float64}, 
     primal_gradient::CuVector{Float64},
     primal_obj_product::CuVector{Float64},
-    primal_ray_estimate_product::CuVector{Float64},
-    primal_ray_estimate_gradient::CuVector{Float64},
     buffer_kkt::CuBufferKKTState,
 )
     stats = IterationStats()
@@ -345,7 +337,7 @@ function compute_iteration_stats(
             eps_optimal_absolute / eps_optimal_relative,
             candidate_type,
             primal_product,
-            dual_product, #
+            dual_product, 
             primal_gradient,
             primal_obj_product,
             buffer_kkt,
@@ -387,9 +379,9 @@ function evaluate_unscaled_iteration_stats(
     primal_weight::Float64,
     candidate_type::PointType,
     primal_product::CuVector{Float64},
-    dual_product::CuVector{Float64}, #
+    dual_product::CuVector{Float64}, 
     primal_gradient::CuVector{Float64},
-    primal_obj_product::CuVector{Float64}, #
+    primal_obj_product::CuVector{Float64}, 
     buffer_original::CuBufferOriginalSol,
     buffer_kkt::CuBufferKKTState,
 )
@@ -423,8 +415,6 @@ function evaluate_unscaled_iteration_stats(
         qp_cache,
         buffer_original.original_primal_solution,
         buffer_original.original_dual_solution,
-        buffer_original.original_primal_solution,  # ray estimate
-        buffer_original.original_dual_solution,  # ray estimate
         iteration - 1,
         cumulative_kkt_passes,
         cumulative_time,
@@ -437,155 +427,6 @@ function evaluate_unscaled_iteration_stats(
         buffer_original.original_dual_product,
         buffer_original.original_primal_gradient,
         buffer_original.original_primal_obj_product,
-        buffer_original.original_primal_product,
-        buffer_original.original_primal_gradient,
         buffer_kkt,
     )
 end
-
-# #############################
-# # Below are print functions #
-# #############################
-# function print_to_screen_this_iteration(
-#     termination_reason::Union{TerminationReason,Bool},
-#     iteration::Int64,
-#     verbosity::Int64,
-#     termination_evaluation_frequency::Int32,
-# )
-#     if verbosity >= 2
-#         if termination_reason == false
-#         num_of_evaluations = (iteration - 1) / termination_evaluation_frequency
-#         if verbosity >= 9
-#             display_frequency = 1
-#         elseif verbosity >= 6
-#             display_frequency = 3
-#         elseif verbosity >= 5
-#             display_frequency = 10
-#         elseif verbosity >= 4
-#             display_frequency = 20
-#         elseif verbosity >= 3
-#             display_frequency = 50
-#         else
-#             return iteration == 1
-#         end
-#         # print_to_screen_this_iteration is true every
-#         # display_frequency * termination_evaluation_frequency iterations.
-#         return mod(num_of_evaluations, display_frequency) == 0
-#         else
-#         return true
-#         end
-#     else
-#         return false
-#     end
-# end
-
-
-# function display_iteration_stats_heading()
-#     Printf.@printf(
-#         "%s | %s | %s | %s |",
-#         rpad("runtime", 24),
-#         rpad("residuals", 26),
-#         rpad(" solution information", 26),
-#         rpad("relative residuals", 23)
-#     )
-#     println("")
-#     Printf.@printf(
-#         "%s %s %s | %s %s  %s | %s %s %s | %s %s %s |",
-#         rpad("#iter", 7),
-#         rpad("#kkt", 8),
-#         rpad("seconds", 7),
-#         rpad("pr norm", 8),
-#         rpad("du norm", 8),
-#         rpad("gap", 7),
-#         rpad(" pr obj", 9),
-#         rpad("pr norm", 8),
-#         rpad("du norm", 7),
-#         rpad("rel pr", 7),
-#         rpad("rel du", 7),
-#         rpad("rel gap", 7)
-#     )
-#     print("\n")
-# end
-
-
-# function display_iteration_stats_heading(verbosity::Int64)
-#     if verbosity >= 7
-#         display_iteration_stats_heading(true)
-#     elseif verbosity >= 2
-#         display_iteration_stats_heading(false)
-#     end
-# end
-
-# function lpad_float(number::Float64)
-#     return lpad(Printf.@sprintf("%.1e", number), 8)
-# end
-
-# function display_iteration_stats(
-#     stats::IterationStats;
-#     choice_of_norm::OptimalityNorm=L_INF,
-# )
-    
-
-#     if length(stats.convergence_information) > 0
-#         if choice_of_norm ==  L2
-#             Printf.@printf(
-#             "%s  %.1e  %.1e | %.1e  %.1e  %s | %s  %.1e  %.1e | %.1e %.1e %.1e |",
-#             rpad(string(stats.iteration_number), 6),
-#             stats.cumulative_kkt_matrix_passes,
-#             stats.cumulative_time_sec,
-#             stats.convergence_information[1].l2_primal_residual,
-#             stats.convergence_information[1].l2_dual_residual,
-#             lpad_float(
-#                 stats.convergence_information[1].primal_objective -
-#                 stats.convergence_information[1].dual_objective,
-#             ),
-#             lpad_float(stats.convergence_information[1].primal_objective),
-#             stats.convergence_information[1].l2_primal_variable,
-#             stats.convergence_information[1].l2_dual_variable,
-#             stats.convergence_information[1].relative_l2_primal_residual,
-#             stats.convergence_information[1].relative_l2_dual_residual,
-#             stats.convergence_information[1].relative_optimality_gap
-#             )
-#         else
-#             Printf.@printf(
-#             "%s  %.1e  %.1e | %.1e  %.1e  %s | %s  %.1e  %.1e | %.1e %.1e %.1e |",
-#             rpad(string(stats.iteration_number), 6),
-#             stats.cumulative_kkt_matrix_passes,
-#             stats.cumulative_time_sec,
-#             stats.convergence_information[1].l_inf_primal_residual,
-#             stats.convergence_information[1].l_inf_dual_residual,
-#             lpad_float(
-#                 stats.convergence_information[1].primal_objective -
-#                 stats.convergence_information[1].dual_objective,
-#             ),
-#             lpad_float(stats.convergence_information[1].primal_objective),
-#             stats.convergence_information[1].l_inf_primal_variable,
-#             stats.convergence_information[1].l_inf_dual_variable,
-#             stats.convergence_information[1].relative_l_inf_primal_residual,
-#             stats.convergence_information[1].relative_l_inf_dual_residual,
-#             stats.convergence_information[1].relative_optimality_gap
-#             )
-#         end
-#     else
-#         Printf.@printf(
-#         "%s  %.1e  %.1e",
-#         rpad(string(stats.iteration_number), 6),
-#         stats.cumulative_kkt_matrix_passes,
-#         stats.cumulative_time_sec
-#         )
-#     end
-
-#     print("\n")
-# end
-
-# function print_infinity_norms(convergence_info::ConvergenceInformation)
-#     print("l_inf: ")
-#     Printf.@printf(
-#         "primal_res = %.3e, dual_res = %.3e, primal_var = %.3e, dual_var = %.3e",
-#         convergence_info.l_inf_primal_residual,
-#         convergence_info.l_inf_dual_residual,
-#         convergence_info.l_inf_primal_variable,
-#         convergence_info.l_inf_dual_variable
-#     )
-#     println()
-# end    

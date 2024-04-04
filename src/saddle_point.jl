@@ -67,25 +67,23 @@ function weighted_norm(
     return sqrt(weights) * tmp
 end
 
-mutable struct SolutionWeightedAverage # sum to avg
+mutable struct SolutionWeightedAverage 
     avg_primal_solutions::Vector{Float64}
     avg_dual_solutions::Vector{Float64}
     primal_solutions_count::Int64
     dual_solutions_count::Int64
-    # sum_primal_solution_weights::Float64
-    # sum_dual_solution_weights::Float64
     avg_primal_product::Vector{Float64}
     avg_dual_product::Vector{Float64}
-    avg_primal_obj_product::Vector{Float64} #
+    avg_primal_obj_product::Vector{Float64} 
 end
 
 mutable struct BufferAvgState
     avg_primal_solution::Vector{Float64}
     avg_dual_solution::Vector{Float64}
     avg_primal_product::Vector{Float64}
-    avg_dual_product::Vector{Float64} #
+    avg_dual_product::Vector{Float64} 
     avg_primal_gradient::Vector{Float64}
-    avg_primal_obj_product::Vector{Float64} #
+    avg_primal_obj_product::Vector{Float64} 
 end
 
 """
@@ -100,8 +98,6 @@ function initialize_solution_weighted_average(
         zeros(Float64, dual_size),
         0,
         0,
-        # 0.0,
-        # 0.0,
         zeros(Float64, dual_size),
         zeros(Float64, primal_size),
         zeros(Float64, primal_size),
@@ -120,8 +116,6 @@ function reset_solution_weighted_average!(
         zeros(Float64, length(solution_weighted_avg.avg_dual_solutions))
     solution_weighted_avg.primal_solutions_count = 0
     solution_weighted_avg.dual_solutions_count = 0
-    # solution_weighted_avg.avg_primal_solution_weights = 0.0
-    # solution_weighted_avg.avg_dual_solution_weights = 0.0
 
     solution_weighted_avg.avg_primal_product .= zeros(Float64, length(solution_weighted_avg.avg_dual_solutions))
     solution_weighted_avg.avg_dual_product .= zeros(Float64, length(solution_weighted_avg.avg_primal_solutions))
@@ -141,7 +135,6 @@ function add_to_primal_solution_weighted_average!(
     solution_weighted_avg.avg_primal_solutions .+=
         weight * (current_primal_solution - solution_weighted_avg.avg_primal_solutions)
     solution_weighted_avg.primal_solutions_count += 1
-    # solution_weighted_avg.sum_primal_solution_weights += weight
     return
 end
 
@@ -157,7 +150,6 @@ function add_to_dual_solution_weighted_average!(
     solution_weighted_avg.avg_dual_solutions .+= 
         weight * (current_dual_solution - solution_weighted_avg.avg_dual_solutions)
     solution_weighted_avg.dual_solutions_count += 1
-    # solution_weighted_avg.sum_dual_solution_weights += weight
     return
 end
 
@@ -254,15 +246,6 @@ function compute_average!(
     buffer_avg::BufferAvgState,
     problem::QuadraticProgrammingProblem,
 )
-    # buffer_avg.avg_primal_solution .= solution_weighted_avg.sum_primal_solutions ./ solution_weighted_avg.sum_primal_solution_weights
-    # buffer_avg.avg_dual_solution .= solution_weighted_avg.sum_dual_solutions ./ solution_weighted_avg.sum_dual_solution_weights
-    # buffer_avg.avg_primal_product .= solution_weighted_avg.sum_primal_product ./ solution_weighted_avg.sum_primal_solution_weights
-    # buffer_avg.avg_primal_obj_product .= solution_weighted_avg.sum_primal_obj_product ./ sum_primal_solution_weights
-
-    # buffer_avg.avg_primal_gradient .= -solution_weighted_avg.sum_dual_product ./ solution_weighted_avg.sum_dual_solution_weights
-    # buffer_avg.avg_primal_gradient .+= problem.objective_vector 
-    # buffer_avg.avg_primal_gradient .+= buffer_avg.avg_primal_obj_product
-
     buffer_avg.avg_primal_solution .= copy(solution_weighted_avg.avg_primal_solutions)
     buffer_avg.avg_dual_solution .= copy(solution_weighted_avg.avg_dual_solutions)
     buffer_avg.avg_primal_product .= copy(solution_weighted_avg.avg_primal_product)
@@ -288,14 +271,13 @@ function compute_weight_kkt_residual(
     primal_iterate::Vector{Float64},
     dual_iterate::Vector{Float64},
     primal_product::Vector{Float64},
-    dual_product::Vector{Float64}, #
+    dual_product::Vector{Float64}, 
     primal_gradient::Vector{Float64},
-    primal_obj_product::Vector{Float64}, #
+    primal_obj_product::Vector{Float64}, 
     buffer_kkt::BufferKKTState,
     primal_weight::Float64,
     primal_norm_params::Float64, 
     dual_norm_params::Float64, 
-    # scaled_problem::ScaledQpProblem, ##
 )
     ## construct buffer_kkt
     buffer_kkt.primal_solution .= copy(primal_iterate)
@@ -308,9 +290,6 @@ function compute_weight_kkt_residual(
     compute_primal_residual!(problem, buffer_kkt)
     primal_objective = primal_obj(problem, buffer_kkt.primal_solution, buffer_kkt.primal_obj_product)
 
-    # l2_primal_residual = norm([buffer_kkt.constraint_violation; buffer_kkt.lower_variable_violation; buffer_kkt.upper_variable_violation], 2)
-    # relative_l2_primal_residual = l2_primal_residual / (1 + norm(problem.right_hand_side, 2) + norm(buffer_kkt.primal_product, 2))
-
     l_inf_primal_residual = norm([buffer_kkt.constraint_violation; buffer_kkt.lower_variable_violation; buffer_kkt.upper_variable_violation], Inf)
     relative_l_inf_primal_residual = l_inf_primal_residual / (1 + max(norm(problem.right_hand_side, Inf), norm(buffer_kkt.primal_product, Inf)))
 
@@ -318,26 +297,15 @@ function compute_weight_kkt_residual(
     compute_dual_stats!(problem, buffer_kkt)
     dual_objective = buffer_kkt.dual_stats.dual_objective
 
-    # l2_dual_residual = norm([buffer_kkt.dual_stats.dual_residual; buffer_kkt.reduced_costs_violation], 2)
-    # relative_l2_dual_residual = l2_dual_residual / (1 + norm(problem.objective_vector, 2) + norm(dual_product, 2))
-
     l_inf_dual_residual = norm([buffer_kkt.dual_stats.dual_residual; buffer_kkt.reduced_costs_violation], Inf)
     relative_l_inf_dual_residual = l_inf_dual_residual / (1 + max(norm(problem.objective_vector, Inf), norm(buffer_kkt.primal_obj_product, Inf), norm(dual_product, Inf)))
 
     # gap
     gap = abs(primal_objective - dual_objective)
-    # abs_obj =
-    #     abs(primal_objective) +
-    #     abs(dual_objective)
     abs_obj =
         max(abs(primal_objective),
         abs(dual_objective))
     relative_gap = gap / (1 + abs_obj)
-
-
-    # weighted_kkt_residual = sqrt(primal_weight * l2_primal_residual^2 + 1/primal_weight * l2_dual_residual^2 + abs(primal_objective - dual_objective)^2)
-
-    # relative_weighted_kkt_residual = sqrt(primal_weight * relative_l2_primal_residual^2 + 1/primal_weight * relative_l2_dual_residual^2 + relative_gap^2) #  sqrt(relative_l2_primal_residual^2 + relative_l2_dual_residual^2 + relative_gap^2) #
 
     weighted_kkt_residual = max(primal_weight * l_inf_primal_residual, 1/primal_weight * l_inf_dual_residual, abs(primal_objective - dual_objective))
 
@@ -378,9 +346,9 @@ mutable struct RestartInfo
     kkt_reduction_ratio_last_trial::Float64
 
     primal_product::Vector{Float64}
-    dual_product::Vector{Float64} #
+    dual_product::Vector{Float64} 
     primal_gradient::Vector{Float64}
-    primal_obj_product::Vector{Float64} #
+    primal_obj_product::Vector{Float64} 
 end
 
 """
@@ -498,7 +466,7 @@ function should_reset_to_average(
     restart_to_current_metric::RestartToCurrentMetric,
 )
     if restart_to_current_metric == KKT_GREEDY
-        return current.relative_kkt_residual  >=  average.relative_kkt_residual #  current.kkt_residual  >=  average.kkt_residual #
+        return current.relative_kkt_residual  >=  average.relative_kkt_residual 
     else
         return true # reset to average
     end
@@ -534,8 +502,8 @@ function should_do_adaptive_restart_kkt(
 
     do_restart = false
 
-    kkt_candidate_residual = candidate_kkt.relative_kkt_residual #candidate_kkt.kkt_residual # 
-    kkt_last_residual = last_restart.relative_kkt_residual     #last_restart.kkt_residual #  
+    kkt_candidate_residual = candidate_kkt.relative_kkt_residual 
+    kkt_last_residual = last_restart.relative_kkt_residual     
     kkt_reduction_ratio = kkt_candidate_residual / kkt_last_residual
 
     if kkt_reduction_ratio < restart_params.necessary_reduction_for_restart
@@ -571,11 +539,10 @@ function run_restart_scheme(
     buffer_avg::BufferAvgState,
     buffer_kkt::BufferKKTState,
     buffer_primal_gradient::Vector{Float64},
-    primal_obj_product::Vector{Float64}, #
+    primal_obj_product::Vector{Float64}, 
 )
     if solution_weighted_avg.primal_solutions_count > 0 &&
         solution_weighted_avg.dual_solutions_count > 0
-        # compute_average!(solution_weighted_avg, buffer_avg, problem)
     else
         return RESTART_CHOICE_NO_RESTART
     end
@@ -598,7 +565,7 @@ function run_restart_scheme(
             current_primal_solution,
             current_dual_solution,
             primal_product,
-            dual_product, #
+            dual_product, 
             buffer_primal_gradient,
             primal_obj_product,
             buffer_kkt,
@@ -611,7 +578,7 @@ function run_restart_scheme(
             buffer_avg.avg_primal_solution,
             buffer_avg.avg_dual_solution,
             buffer_avg.avg_primal_product,
-            buffer_avg.avg_dual_product, #
+            buffer_avg.avg_dual_product, 
             buffer_avg.avg_primal_gradient,
             buffer_avg.avg_primal_obj_product,
             buffer_kkt,
@@ -755,7 +722,7 @@ function update_last_restart_info!(
     candidate_kkt_residual::Union{Nothing,KKTrestart},
     restart_length::Int64,
     primal_product::Vector{Float64},
-    dual_product::Vector{Float64}, #
+    dual_product::Vector{Float64}, 
     primal_gradient::Vector{Float64},
     primal_obj_product::Vector{Float64},
 )

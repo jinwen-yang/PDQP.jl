@@ -167,7 +167,10 @@ function main()
 
     qp = PDQP.qps_reader_to_standard_form(instance_path)
 
+    oldstd = stdout
+    redirect_stdout(devnull)
     warm_up(qp, gpu_flag);
+    redirect_stdout(oldstd)
 
     restart_params = PDQP.construct_restart_parameters(
         PDQP.ADAPTIVE_KKT,    # NO_RESTARTS FIXED_FREQUENCY ADAPTIVE_KKT

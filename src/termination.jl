@@ -52,8 +52,8 @@ end
 
 function construct_termination_criteria(;
     optimality_norm = L_INF,
-    eps_optimal_absolute = 1.0e-6,
-    eps_optimal_relative = 1.0e-6,
+    eps_optimal_absolute = 1.0e-3,
+    eps_optimal_relative = 1.0e-3,
     time_sec_limit = Inf,
     iteration_limit = typemax(Int32),
     kkt_matrix_pass_limit = Inf,

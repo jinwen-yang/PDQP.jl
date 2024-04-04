@@ -23,7 +23,7 @@ mutable struct PdhgSolverState
     delta_dual::Vector{Float64}
     current_primal_product::Vector{Float64}
     current_dual_product::Vector{Float64}
-    current_primal_obj_product::Vector{Float64} #
+    current_primal_obj_product::Vector{Float64} 
     solution_weighted_avg::SolutionWeightedAverage 
     step_size::Float64
     primal_weight::Float64
@@ -45,8 +45,8 @@ mutable struct BufferState
     next_primal_product::Vector{Float64}
     next_dual_product::Vector{Float64}
     delta_dual_product::Vector{Float64}
-    next_primal_obj_product::Vector{Float64} #
-    delta_primal_obj_product::Vector{Float64} #
+    next_primal_obj_product::Vector{Float64} 
+    delta_primal_obj_product::Vector{Float64} 
 end
 
 
@@ -61,7 +61,6 @@ end
   
 
 function pdhg_specific_log(
-    # problem::QuadraticProgrammingProblem,
     iteration::Int64,
     current_primal_solution::Vector{Float64},
     current_dual_solution::Vector{Float64},
@@ -144,7 +143,7 @@ function power_method_failure_probability(
     if k < 2 || epsilon <= 0.0
         return 1.0
     end
-    return min(0.824, 0.354 / sqrt(epsilon * (k - 1))) * sqrt(dimension) * (1.0 - epsilon)^(k - 1 / 2) # FirstOrderLp.jl old version (epsilon * (k - 1)) instead of sqrt(epsilon * (k - 1)))
+    return min(0.824, 0.354 / sqrt(epsilon * (k - 1))) * sqrt(dimension) * (1.0 - epsilon)^(k - 1 / 2) 
 end
 
 function estimate_maximum_singular_value(
@@ -180,9 +179,9 @@ function compute_next_primal_solution_kernel!(
     variable_upper_bound::Vector{Float64},
     current_primal_solution::Vector{Float64},
     current_dual_product::Vector{Float64},
-    current_primal_obj_product::Vector{Float64}, #
-    current_avg_primal_obj_product::Vector{Float64}, #
-    momentum_coefficient::Float64, #
+    current_primal_obj_product::Vector{Float64}, 
+    current_avg_primal_obj_product::Vector{Float64}, 
+    momentum_coefficient::Float64, 
     step_size::Float64,
     primal_weight::Float64,
     num_variables::Int64,
@@ -203,14 +202,14 @@ function compute_next_primal_solution!(
     problem::QuadraticProgrammingProblem,
     current_primal_solution::Vector{Float64},
     current_dual_product::Vector{Float64},
-    current_primal_obj_product::Vector{Float64}, #
-    current_avg_primal_obj_product::Vector{Float64}, #
-    momentum_coefficient::Float64, #
+    current_primal_obj_product::Vector{Float64}, 
+    current_avg_primal_obj_product::Vector{Float64}, 
+    momentum_coefficient::Float64, 
     step_size::Float64,
     primal_weight::Float64,
     next_primal::Vector{Float64},
     next_primal_product::Vector{Float64},
-    next_primal_obj_product::Vector{Float64}, #
+    next_primal_obj_product::Vector{Float64}, 
 )
     compute_next_primal_solution_kernel!(
         problem.objective_vector,
@@ -241,7 +240,7 @@ function compute_next_dual_solution_kernel!(
     next_primal_product::Vector{Float64},
     step_size::Float64,
     primal_weight::Float64,
-    extrapolation_coefficient::Float64, #
+    extrapolation_coefficient::Float64, 
     num_equalities::Int64,
     num_constraints::Int64,
     next_dual::Vector{Float64},
@@ -263,7 +262,7 @@ Compute dual solution in the next iteration
 function compute_next_dual_solution!(
     problem::QuadraticProgrammingProblem,
     current_dual_solution::Vector{Float64},
-    extrapolation_coefficient::Float64, #
+    extrapolation_coefficient::Float64, 
     step_size::Float64,
     primal_weight::Float64,
     next_primal_product::Vector{Float64},
@@ -284,7 +283,6 @@ function compute_next_dual_solution!(
         next_dual,
     )
 
-    # next_dual_product .= problem.constraint_matrix' * next_dual
     next_dual_product .= problem.constraint_matrix_t * next_dual
 end
 
@@ -297,14 +295,12 @@ function update_solution_in_solver_state!(
 )
     solver_state.delta_primal .= buffer_state.next_primal .- solver_state.current_primal_solution
     solver_state.delta_dual .= buffer_state.next_dual .- solver_state.current_dual_solution
-    # solver_state.delta_dual_product .= buffer_state.next_dual_product .- solver_state.current_dual_product
     solver_state.current_primal_solution .= copy(buffer_state.next_primal)
     solver_state.current_dual_solution .= copy(buffer_state.next_dual)
     solver_state.current_dual_product .= copy(buffer_state.next_dual_product)
     solver_state.current_primal_product .= copy(buffer_state.next_primal_product)
     solver_state.current_primal_obj_product .= copy(buffer_state.next_primal_obj_product)
 
-    # weight = 1 / (2.0 + solver_state.solution_weighted_avg.primal_solutions_count) #
     weight = 1 / (1.0 + solver_state.solution_weighted_avg.primal_solutions_count / 2.0) #
     
     add_to_solution_weighted_average!(
@@ -326,7 +322,6 @@ function take_step!(
     buffer_state::BufferState,
 )
 
-    # momentum_coefficient = 2.0 + solver_state.solution_weighted_avg.primal_solutions_count
     momentum_coefficient = 1.0 + solver_state.solution_weighted_avg.primal_solutions_count / 2.0
 
     compute_next_primal_solution!(
@@ -344,7 +339,6 @@ function take_step!(
     )
     
     extrapolation_coefficient = (solver_state.solution_weighted_avg.dual_solutions_count) / (solver_state.solution_weighted_avg.dual_solutions_count + 1.0)
-    # extrapolation_coefficient = 1.0
 
     compute_next_dual_solution!(
         problem,
@@ -368,9 +362,6 @@ function take_step!(
     iter = solver_state.solution_weighted_avg.primal_solutions_count + 2
     norm_Q, norm_A = solver_state.l2_norm_objective_matrix, solver_state.l2_norm_constraint_matrix
     primal_weight = solver_state.primal_weight
-
-    # solver_state.step_size = sqrt((iter / norm_A) / (2 * norm_Q + iter * norm_A))
-    # solver_state.primal_weight = sqrt(((2 * norm_Q + iter * norm_A) / norm_A) / iter)
 
     solver_state.step_size = min(0.99 * iter / (norm_Q / primal_weight + sqrt(norm_A^2*iter^2 + norm_Q^2 / primal_weight^2)), (iter-1)/(iter-2) * solver_state.step_size)
 end
@@ -490,15 +481,12 @@ function optimize(
         0.0,                                   # dual_res_inf
     )
 
-    # buffer_primal_gradient = zeros(Float64, primal_size)
     buffer_primal_gradient = scaled_problem.scaled_qp.objective_vector .- solver_state.current_dual_product
     buffer_primal_gradient .+= solver_state.current_primal_obj_product
 
     
     solver_state.cumulative_kkt_passes += number_of_power_iterations_Q + number_of_power_iterations_A
 
-    # solver_state.step_size = sqrt(1 / norm_A / (2 * norm_Q + norm_A))
-    # solver_state.primal_weight = sqrt((2 * norm_Q + norm_A) / norm_A)
     if params.scale_invariant_initial_primal_weight
         solver_state.primal_weight = select_initial_primal_weight(
             scaled_problem.scaled_qp,
@@ -685,13 +673,6 @@ function optimize(
                     params.verbosity,
                 )
 
-                # scale_norm = min(norm_Q/norm_A, norm_A/norm_Q)
-
-                # if min(solver_state.primal_weight, 1 / solver_state.primal_weight) < scale_norm * 5e-4
-                #     primal_weight_update_smoothing = 0.0
-                #     solver_state.primal_weight = 1.0
-                # end
-
                 solver_state.step_size = 0.99 * 2 / (norm_Q / solver_state.primal_weight + sqrt(4*norm_A^2 + norm_Q^2 / solver_state.primal_weight^2))
             end
         end
@@ -705,7 +686,6 @@ function optimize(
             termination_evaluation_frequency,
         )
             pdhg_specific_log(
-                # problem,
                 iteration,
                 solver_state.current_primal_solution,
                 solver_state.current_dual_solution,

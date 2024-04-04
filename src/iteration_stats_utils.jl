@@ -10,7 +10,7 @@ mutable struct BufferKKTState
     dual_solution::Vector{Float64}
     primal_product::Vector{Float64}
     primal_gradient::Vector{Float64}
-    primal_obj_product::Vector{Float64} #
+    primal_obj_product::Vector{Float64} 
     lower_variable_violation::Vector{Float64}
     upper_variable_violation::Vector{Float64}
     constraint_violation::Vector{Float64}
@@ -218,7 +218,7 @@ function compute_convergence_information(
     eps_ratio::Float64,
     candidate_type::PointType,
     primal_product::Vector{Float64},
-    dual_product::Vector{Float64}, #
+    dual_product::Vector{Float64}, 
     primal_gradient::Vector{Float64},
     primal_obj_product::Vector{Float64},
     buffer_kkt::BufferKKTState,
@@ -240,15 +240,13 @@ function compute_convergence_information(
     convergence_info.l2_primal_residual = norm([buffer_kkt.constraint_violation; buffer_kkt.lower_variable_violation; buffer_kkt.upper_variable_violation], 2)
     convergence_info.relative_l_inf_primal_residual =
         convergence_info.l_inf_primal_residual /
-        (eps_ratio + max(qp_cache.l_inf_norm_primal_right_hand_side, norm(buffer_kkt.primal_product, Inf))) #
+        (eps_ratio + max(qp_cache.l_inf_norm_primal_right_hand_side, norm(buffer_kkt.primal_product, Inf))) 
     convergence_info.relative_l2_primal_residual =
         convergence_info.l2_primal_residual /
-        (eps_ratio + qp_cache.l2_norm_primal_right_hand_side + norm(buffer_kkt.primal_product, 2)) #
+        (eps_ratio + qp_cache.l2_norm_primal_right_hand_side + norm(buffer_kkt.primal_product, 2)) 
     convergence_info.l_inf_primal_variable = norm(buffer_kkt.primal_solution, Inf)
     convergence_info.l2_primal_variable = norm(buffer_kkt.primal_solution, 2)
-
-    # dual_product = problem.objective_vector .+ buffer_kkt.primal_obj_product .- buffer_kkt.primal_gradient
-    
+   
 
     compute_dual_stats!(problem, buffer_kkt)
     convergence_info.dual_objective = buffer_kkt.dual_stats.dual_objective
@@ -266,9 +264,6 @@ function compute_convergence_information(
     convergence_info.corrected_dual_objective = corrected_dual_obj(buffer_kkt)
 
     gap = abs(convergence_info.primal_objective - convergence_info.dual_objective)
-    # abs_obj =
-    #     abs(convergence_info.primal_objective) +
-    #     abs(convergence_info.dual_objective)
     abs_obj =
         max(abs(convergence_info.primal_objective) ,
         abs(convergence_info.dual_objective))
@@ -288,8 +283,6 @@ function compute_iteration_stats(
     qp_cache::CachedQuadraticProgramInfo,
     primal_iterate::Vector{Float64},
     dual_iterate::Vector{Float64},
-    primal_ray_estimate::Vector{Float64},
-    dual_ray_estimate::Vector{Float64},
     iteration_number::Integer,
     cumulative_kkt_matrix_passes::Float64,
     cumulative_time_sec::Float64,
@@ -299,11 +292,9 @@ function compute_iteration_stats(
     primal_weight::Float64,
     candidate_type::PointType,
     primal_product::Vector{Float64},
-    dual_product::Vector{Float64}, #
+    dual_product::Vector{Float64}, 
     primal_gradient::Vector{Float64},
     primal_obj_product::Vector{Float64},
-    primal_ray_estimate_product::Vector{Float64},
-    primal_ray_estimate_gradient::Vector{Float64},
     buffer_kkt::BufferKKTState,
 )
     stats = IterationStats()
@@ -320,7 +311,7 @@ function compute_iteration_stats(
             eps_optimal_absolute / eps_optimal_relative,
             candidate_type,
             primal_product,
-            dual_product, #
+            dual_product, 
             primal_gradient,
             primal_obj_product,
             buffer_kkt,
@@ -362,13 +353,13 @@ function evaluate_unscaled_iteration_stats(
     primal_weight::Float64,
     candidate_type::PointType,
     primal_product::Vector{Float64},
-    dual_product::Vector{Float64}, #
+    dual_product::Vector{Float64}, 
     primal_gradient::Vector{Float64},
-    primal_obj_product::Vector{Float64}, #
+    primal_obj_product::Vector{Float64}, 
     buffer_original::BufferOriginalSol,
     buffer_kkt::BufferKKTState,
 )
-    # Unscale iterates. TODO
+    # Unscale iterates. 
     buffer_original.original_primal_solution .=
         primal_solution ./ scaled_problem.variable_rescaling
     buffer_original.original_primal_solution .*= scaled_problem.constant_rescaling
@@ -398,8 +389,6 @@ function evaluate_unscaled_iteration_stats(
         qp_cache,
         buffer_original.original_primal_solution,
         buffer_original.original_dual_solution,
-        buffer_original.original_primal_solution,  # ray estimate
-        buffer_original.original_dual_solution,  # ray estimate
         iteration - 1,
         cumulative_kkt_passes,
         cumulative_time,
@@ -412,8 +401,6 @@ function evaluate_unscaled_iteration_stats(
         buffer_original.original_dual_product,
         buffer_original.original_primal_gradient,
         buffer_original.original_primal_obj_product,
-        buffer_original.original_primal_product,
-        buffer_original.original_primal_gradient,
         buffer_kkt,
     )
 end
@@ -491,8 +478,6 @@ function display_iteration_stats(
     stats::IterationStats;
     choice_of_norm::OptimalityNorm=L_INF,
 )
-    
-
     if length(stats.convergence_information) > 0
         if choice_of_norm ==  L2
             Printf.@printf(
