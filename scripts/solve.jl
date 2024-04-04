@@ -2,6 +2,8 @@ import ArgParse
 import GZip
 import JSON3
 
+import CUDA
+
 import PDQP
 
 function write_vector_to_file(filename, vector)
@@ -164,6 +166,10 @@ function main()
     time_sec_limit = parsed_args["time_sec_limit"]
     output_directory = parsed_args["output_directory"]
     gpu_flag = Bool(parsed_args["use_gpu"])
+
+    if gpu_flag && !CUDA.functional()
+        error("CUDA Not Found.")
+    end
 
     qp = PDQP.qps_reader_to_standard_form(instance_path)
 
