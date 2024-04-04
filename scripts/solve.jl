@@ -168,7 +168,7 @@ function main()
     gpu_flag = Bool(parsed_args["use_gpu"])
 
     if gpu_flag && !CUDA.functional()
-        error("CUDA Not Found.")
+        error("CUDA not found when --use_gpu=1")
     end
 
     qp = PDQP.qps_reader_to_standard_form(instance_path)
