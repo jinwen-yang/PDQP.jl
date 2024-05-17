@@ -1,6 +1,6 @@
 # PDQP.jl
 
-This repository contains experimental code for solving quadratic programming using first-order methods on CPUs or NVIDIA GPUs. 
+This repository contains experimental code for solving convex quadratic programming using first-order methods on CPUs or NVIDIA GPUs. 
 
 ## Setup
 
